@@ -1,15 +1,21 @@
 "use strict";
+
 var gulp = require('gulp'),
     watch = require('gulp-watch');
 var connect = require('gulp-connect'); //run local dev server
 var open = require('gulp-open'); //open url in browser
+var browserify = require('browserify'); // bundles js
+var reactify = require('reactify'); // tranforms react jsx to js
+var source = require('vinyl-source-stream'); // use conventional text streams with gulp
 
 var config = {
-  port: 9005,
+  port: 3000,
   devBaseUrl: 'http://localhost',
   paths: {
     html: './src/*.html',
-    dist: './dist/'
+    js: './src/**/*.js',
+    dist: './dist/',
+    mainJs: './src/main.js'
   }
 }
 
@@ -34,8 +40,19 @@ gulp.task('html', function() {
     .pipe(connect.reload());
 });
 
+gulp.task('js', function() {
+  browserify(config.paths.mainJs)
+    .transform(reactify)
+    .bundle()
+    .on('error', console.error.bind(console))
+    .pipe(source('bundle.js'))
+    .pipe(gulp.dest(config.paths.dist + '/scripts'))
+    .pipe(connect.reload());
+})
+
 gulp.task('watch', function() {
   gulp.watch(config.paths.html, ['html']);
+  gulp.watch(config.paths.js, ['js']);
 });
 
-gulp.task('default', ['html', 'open', 'watch']);
+gulp.task('default', ['html', 'js', 'open', 'watch']);
